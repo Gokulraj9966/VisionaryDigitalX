@@ -37,7 +37,7 @@ section { padding: 6rem 0; position: relative; z-index: 2; }
 }
 .cta-button:hover { 
     background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--gradient);
     transform: translateY(-3px);
 }
 
@@ -73,7 +73,7 @@ section { padding: 6rem 0; position: relative; z-index: 2; }
 /* ======== PROCESS SECTION STYLING ======== */
 .process-list { list-style: none; max-width: 800px; margin: 0 auto; }
 .process-step {
-    background: var(--bg-light-dark); border: 1px solid var(--border-color);
+    background: var(--bg-light-dark); border: var(--gradient);
     border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -101,7 +101,7 @@ section { padding: 6rem 0; position: relative; z-index: 2; }
 /* ======== FINAL CTA (UPDATED WITH GLASS EFFECT) ======== */
 .final-cta-section .cta-content { 
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -113,8 +113,8 @@ section { padding: 6rem 0; position: relative; z-index: 2; }
 .final-cta-section p { max-width: 600px; margin: 1rem auto 2rem; }
 .final-cta-section .cta-button { 
     /* Overriding default button style for a stronger look here */
-    background: var(--gradient);
-    border: none;
+    background: none;
+    border: var(--gradient);
 }
 .final-cta-section .cta-button:hover { 
     background-position: right center;
@@ -287,4 +287,5 @@ section { padding: 6rem 0; position: relative; z-index: 2; }
         bottom: 15px;
     }
 }
+
 

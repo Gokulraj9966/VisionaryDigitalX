@@ -74,37 +74,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendBtn = document.querySelector('.send-btn');
     const chatLog = document.querySelector('.chat-log');
 
-    // -- State management for conversation --
-    let conversationState = 'idle'; // States: idle, asking_name, asking_phone, asking_product, completed
+    let conversationState = 'idle';
     let leadData = { name: '', phone: '', product: '' };
 
-    // Automatically open chat window after a delay
+    // Automatically open chat window and add initial bot message
     setTimeout(() => {
         chatWindow.classList.add('active');
-    }, 2500); // Chatbot pops up after 2.5 seconds
+        addMessageToLog('bot', "Hello! I'm here to help. You can ask me about our services, process, or ask for a quote.");
+    }, 2500);
 
-    // Toggle chat window visibility on widget click
-    chatWidget.addEventListener('click', () => {
-        chatWindow.classList.toggle('active');
-    });
+    chatWidget.addEventListener('click', () => chatWindow.classList.toggle('active'));
+    closeChatBtn.addEventListener('click', () => chatWindow.classList.remove('active'));
 
-    // Close chat window
-    closeChatBtn.addEventListener('click', () => {
-        chatWindow.classList.remove('active');
-    });
-
-    // Function to handle sending a message
     const sendMessage = () => {
         const userMessage = chatInput.value.trim();
         if (userMessage === "") return;
-
         addMessageToLog('user', userMessage);
         chatInput.value = "";
-
-        setTimeout(getBotResponse, 1000, userMessage);
+        setTimeout(() => getBotResponse(userMessage), 1000);
     };
 
-    // Add message to the chat log UI
     const addMessageToLog = (sender, message) => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('chat-message', sender);
@@ -113,80 +102,83 @@ document.addEventListener('DOMContentLoaded', () => {
         chatLog.parentElement.scrollTop = chatLog.parentElement.scrollHeight;
     };
 
-    // **UPDATED** - Bot response logic with lead collection
     const getBotResponse = (userInput) => {
         const lowerCaseInput = userInput.toLowerCase();
-        let botMessage;
+        let botMessage = "";
 
-        // State-driven conversation flow
-        switch (conversationState) {
-            case 'asking_name':
-                leadData.name = userInput;
-                botMessage = `Thanks, ${leadData.name}! What is a good phone number to reach you at?`;
-                conversationState = 'asking_phone';
-                break;
-
-            case 'asking_phone':
-                leadData.phone = userInput;
-                botMessage = `Perfect. And which of our services are you most interested in today? (e.g., AI Videos, Websites, etc.)`;
-                conversationState = 'asking_product';
-                break;
-
-            case 'asking_product':
-                leadData.product = userInput;
-                botMessage = `Excellent! Just to confirm: <br>
-                    - Name: ${leadData.name}<br>
-                    - Phone: ${leadData.phone}<br>
-                    - Interest: ${leadData.product}<br>
-                    Our team will be in touch with you shortly. Thanks!`;
-                console.log("Lead Collected:", leadData); // In a real app, you would send this data to a server
-                conversationState = 'completed';
-                break;
-
-            case 'completed':
-                botMessage = "I've collected your information, and a team member will reach out soon. Is there anything else I can help you with?";
-                break;
-
-            // Default 'idle' state
-            default:
-                if (lowerCaseInput.includes("service") || lowerCaseInput.includes("what do you do") || lowerCaseInput.includes("quote") || lowerCaseInput.includes("pricing") || lowerCaseInput.includes("cost")) {
-                    botMessage = "I can help with that! To get you the right information, I just need to ask a few questions. What is your name?";
-                    conversationState = 'asking_name';
-                } else if (lowerCaseInput.includes("hello") || lowerCaseInput.includes("hi")) {
-                    botMessage = "Hello there! Are you interested in learning about our services or getting a quote?";
-                } else if (lowerCaseInput.includes("process")) {
-                    botMessage = "Our process involves four key phases: Discovery, Design, Development, and Launch. This ensures your idea is transformed into a high-quality digital product.";
-                } else if (lowerCaseInput.includes("bye") || lowerCaseInput.includes("thanks")) {
-                    botMessage = "You're welcome! Have a great day.";
-                } else {
-                    botMessage = "I'm not sure how to answer that. You can ask about our 'services', 'process', or ask for a 'quote' to get started.";
-                }
-                break;
+        // State-driven conversation flow for lead collection
+        if (conversationState !== 'idle') {
+            switch (conversationState) {
+                case 'asking_name':
+                    leadData.name = userInput;
+                    botMessage = `Thanks, ${leadData.name}! What is a good phone number we can use to contact you?`;
+                    conversationState = 'asking_phone';
+                    break;
+                case 'asking_phone':
+                    leadData.phone = userInput;
+                    botMessage = `Perfect. And which of our services are you most interested in? (e.g., AI Videos, Websites, etc.)`;
+                    conversationState = 'asking_product';
+                    break;
+                case 'asking_product':
+                    leadData.product = userInput;
+                    botMessage = `Excellent! Just to confirm: <br>- Name: ${leadData.name}<br>- Phone: ${leadData.phone}<br>- Interest: ${leadData.product}<br>Our team will be in touch with you shortly. Thank you!`;
+                    console.log("Lead Collected:", leadData);
+                    conversationState = 'completed';
+                    break;
+                case 'completed':
+                    botMessage = "I've passed your details along to our team. They'll be in touch soon. Is there anything else I can help you with today?";
+                    conversationState = 'idle'; // Reset state after completion
+                    break;
+            }
+            addMessageToLog('bot', botMessage);
+            return;
         }
-        
+
+        // --- ENHANCED KNOWLEDGE BASE ---
+        const knowledge = {
+            greetings: { keywords: ["hello", "hi", "hey"], response: "Hello there! How can I assist you today? You can ask about our services, process, or request a quote." },
+            services: { keywords: ["service", "what do you do", "offer"], response: "We specialize in a range of digital solutions: Digital Marketing, Engaging Digital Experiences, Responsive Websites, Mobile Apps, Custom Software, AI-Driven Photos, AI Videos, and Digital Posters. Is there one you'd like to know more about?" },
+            quote: { keywords: ["quote", "pricing", "cost", "how much"], response: () => { conversationState = 'asking_name'; return "Of course! Our projects are custom-quoted to fit your needs. To get started, could I get your name, please?"; } },
+            process: { keywords: ["process", "how do you work"], response: "We follow a four-phase process: 1. Discovery & Strategy, 2. Design & Prototyping, 3. Development & Building, and 4. Launch & Growth. This ensures a smooth journey from idea to a successful digital product." },
+            location: { keywords: ["where", "location", "address"], response: "We are proudly based in Salem, Tamil Nadu, India, but we work with clients from all over the world!" },
+            timeline: { keywords: ["long", "timeline", "duration"], response: "Project timelines can vary. A standard website might take a few weeks, while a custom app could take a few months. Once we understand your project scope, we can give you a precise timeline." },
+            who_are_you: { keywords: ["who are you", "what is visionary"], response: "We are VisionaryDigitalX, a digital agency dedicated to transforming innovative ideas into reality through technology and creativity." },
+            portfolio: { keywords: ["work", "portfolio", "examples", "projects"], response: "Absolutely! You can see some of our recent projects on the main page under the 'Our Blueprint for Innovation' section. If you'd like to see something specific, let me know!" },
+            support: { keywords: ["support", "maintenance", "after launch"], response: "We offer ongoing support and maintenance packages to ensure your digital product remains secure, up-to-date, and performs optimally long after it has launched." },
+            technology: { keywords: ["tech", "stack", "frameworks", "languages"], response: "Our team is proficient in a wide range of modern technologies, including React, Node.js, and Python for web and AI development. We always choose the best tools for the job to ensure your project is scalable and robust." },
+            clients: { keywords: ["who do you work with", "clients"], response: "We partner with a diverse range of clients, from innovative startups to established businesses looking to enhance their digital presence. We're passionate about helping anyone with a great idea." },
+            ai_services: { keywords: ["ai photo", "ai video", "ai-driven"], response: "Our AI services use cutting-edge generative models to create stunning, unique photos and videos for marketing campaigns, product showcases, and more. It's a great way to stand out!"},
+            thanks: { keywords: ["thanks", "thank you", "bye"], response: "You're very welcome! If you need anything else, just let me know. Have a great day!" }
+        };
+
+        let responseFound = false;
+        for (const key in knowledge) {
+            if (knowledge[key].keywords.some(keyword => lowerCaseInput.includes(keyword))) {
+                const response = knowledge[key].response;
+                botMessage = typeof response === 'function' ? response() : response;
+                responseFound = true;
+                break;
+            }
+        }
+
+        if (!responseFound) {
+            botMessage = "That's a great question. I'm not equipped to answer that just yet, but one of our human experts can. To connect you, I'll need to collect a few details. Would that be okay?";
+            conversationState = 'asking_name';
+        }
+
         addMessageToLog('bot', botMessage);
     };
 
-    // Event listeners for sending message
+    // Event listeners
     sendBtn.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 
     // --- SECURITY RESTRICTIONS ---
-    // Disable right-click
-   document.addEventListener('contextmenu', (e) => e.preventDefault());
-
-    // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
     document.addEventListener('keydown', (e) => {
-     if (e.key === 'F12' || 
-      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) ||
-      (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
-      e.preventDefault();
-       }
-   });
-
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) || (e.ctrlKey && e.key.toUpperCase() === 'U')) {
+            e.preventDefault();
+        }
+    });
 });
 
